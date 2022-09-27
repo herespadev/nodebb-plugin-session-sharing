@@ -37,6 +37,7 @@ const payloadKeys = profileFields.concat([
 	'lastName', // dto.
 	'picture',
 	'groups',
+	'expires',
 ]);
 
 const plugin = {
@@ -132,7 +133,7 @@ plugin.process = async (token) => {
 	await plugin.updateUserProfile(uid, userData, isNewUser);
 	await plugin.updateUserGroups(uid, userData);
 	await plugin.verifyUser(token, uid, isNewUser);
-	return uid;
+	return [uid, userData, payload];
 };
 
 plugin.normalizePayload = async (payload) => {
@@ -419,7 +420,7 @@ plugin.addMiddleware = async function ({ req, res }) {
 
 	if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 		try {
-			const uid = await plugin.process(req.cookies[plugin.settings.cookieName]);
+			const [uid, userData, payload] = await plugin.process(req.cookies[plugin.settings.cookieName]);
 			winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 			req.uid = uid;
 
@@ -430,6 +431,11 @@ plugin.addMiddleware = async function ({ req, res }) {
 			await nbbAuthController.doLogin(req, uid);
 
 			req.session.loginLock = true;
+			req.session.cookie.maxAge = payload.expires;
+			req.session.cookie.expires = payload.expires;
+			winston.info("cleanup ==================================");
+			await plugin.cleanup({ res: res });
+
 			const url = req.session.returnTo || req.originalUrl.replace(nconf.get('relative_path'), '');
 			delete req.session.returnTo;
 			res.redirect(nconf.get('relative_path') + url);

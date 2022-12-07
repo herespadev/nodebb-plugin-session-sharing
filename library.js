@@ -44,7 +44,7 @@ const plugin = {
 	ready: false,
 	settings: {
 		name: 'appId',
-		cookieName: 'token',
+		cookieName: 'hsprod_token',
 		cookieDomain: undefined,
 		secret: '',
 		behaviour: 'trust',

@@ -40,11 +40,13 @@ const payloadKeys = profileFields.concat([
 	'expires',
 ]);
 
+console.log(process.env);
+
 const plugin = {
 	ready: false,
 	settings: {
 		name: 'appId',
-		cookieName: 'hsprod_token',
+		cookieName: process.env.APP_ENV === 'dev' ? 'token' : 'hsprod_token',
 		cookieDomain: undefined,
 		secret: '',
 		behaviour: 'trust',

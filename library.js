@@ -46,7 +46,7 @@ const plugin = {
 	ready: false,
 	settings: {
 		name: 'appId',
-		cookieName: process.env.APP_ENV === 'dev' ? 'token' : 'hsprod_token',
+		cookieName: 'token',
 		cookieDomain: undefined,
 		secret: '',
 		behaviour: 'trust',

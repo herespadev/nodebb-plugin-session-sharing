@@ -2,6 +2,7 @@
 
 const winston = module.parent.require('winston');
 const nconf = module.parent.require('nconf');
+const validator = require('validator');
 
 const util = require('util');
 
@@ -262,6 +263,22 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
 	let userObj = {};
 
+	if (userData && userData.picture) {
+		const picture = validator.escape(userData.picture);
+
+		// const validBackgrounds = await user.getIconBackgrounds(uid);
+		// if (!validBackgrounds.includes(data.bgColor)) {
+		// 	data.bgColor = validBackgrounds[0];
+		// }
+
+
+		await user.updateProfile(uid, {
+			uid: uid,
+			picture: picture,
+			// 'icon:bgColor': data.bgColor,
+		}, ['picture', 'icon:bgColor']);
+	}
+
 	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
 	if (!isNewUser && plugin.settings.updateProfile !== 'on') {
 		return;
@@ -445,16 +462,16 @@ plugin.addMiddleware = async function ({ req, res }) {
 			let handleAsGuest = false;
 
 			switch (error.message) {
-			case 'payload-invalid':
-				winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-				break;
-			case 'no-match':
-				winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-				handleAsGuest = true;
-				break;
-			default:
-				winston.warn('[session-sharing] Error encountered while parsing token: ' + error.message);
-				break;
+				case 'payload-invalid':
+					winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+					break;
+				case 'no-match':
+					winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+					handleAsGuest = true;
+					break;
+				default:
+					winston.warn('[session-sharing] Error encountered while parsing token: ' + error.message);
+					break;
 			}
 
 			const data = await plugins.hooks.fire('filter:sessionSharing.error', {

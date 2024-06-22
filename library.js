@@ -313,34 +313,113 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 };
 
 plugin.updateUserGroups = async (uid, userData) => {
-	if (!userData.groups || !Array.isArray(userData.groups)) {
-		return;
-	}
 
-	// Retrieve user groups
-	let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
-	// Normalize user group data to just group names
-	userGroups = userGroups.map(groupObj => groupObj.name);
-
-	// Build join and leave arrays
-	let join = userData.groups.filter(name => !userGroups.includes(name));
-	if (plugin.settings.syncGroupList === 'on') {
-		join = join.filter(group => plugin.settings.syncGroups.includes(group));
-	}
-
-	let leave = userGroups.filter((name) => {
-		// `registered-users` is always a joined group
-		if (name === 'registered-users') {
-			return false;
+	let uGroups = []
+	if (userData.scs) {
+		const tscs = scs.split(",");
+		for (let i=0;i<tscs.length;i++) {
+			if (tscs[i]===-99) {
+				uGroups.push("Forum Admin");
+			} else if (tscs[i]===-95) {
+				uGroups.push("Forum Moderator");
+			} else if (tscs[i]===-20) {
+				uGroups.push("Tier II");
+			} else if (tscs[i]===-10) {
+				uGroups.push("Reliable");
+			} else if (tscs[i]===10) {
+				uGroups.push("Nail Tech");
+			} else if (tscs[i]===20) {
+				uGroups.push("Hair Stylist");
+			} else if (tscs[i]===30) {
+				uGroups.push("Pet Groomer");
+			} else if (tscs[i]===40) {
+				uGroups.push("Massage Therapist");
+			} else if (tscs[i]===41) {
+				uGroups.push("Acupuncturist");
+			} else if (tscs[i]===50) {
+				uGroups.push("Eyelash Technician");
+			} else if (tscs[i]===60) {
+				uGroups.push("Esthetician");
+			} else if (tscs[i]===61) {
+				uGroups.push("Dermal Filler Specialist");
+			} else if (tscs[i]===62) {
+				uGroups.push("Botox Specialist");
+			} else if (tscs[i]===65) {
+				uGroups.push("Body Sculpting Specialist");
+			} else if (tscs[i]===70) {
+				uGroups.push("Makeup Artist");
+			} else if (tscs[i]===80) {
+				uGroups.push("Hair Removal Specialist");
+			} else if (tscs[i]===90) {
+				uGroups.push("Piercing Specialist");
+			} else if (tscs[i]===100) {
+				uGroups.push("Yoga Instructor");
+			} else if (tscs[i]===101) {
+				uGroups.push("Fitness Instructor");
+			} else if (tscs[i]===110) {
+				uGroups.push("Home Cleaner");
+			} else if (tscs[i]===210) {
+				uGroups.push("Automobile Detailer");
+			}
 		}
-
-		return !userData.groups.includes(name);
-	});
-	if (plugin.settings.syncGroupList === 'on') {
-		leave = leave.filter(group => plugin.settings.syncGroups.includes(group));
 	}
+	
+	try {
+		// Retrieve user groups
+		let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
+		// Normalize user group data to just group names
+		userGroups = userGroups.map(groupObj => groupObj.name);
+	
+		// Build join and leave arrays
+		let join = uGroups.filter(name => (!userGroups.includes(name) && name!=="Forum Admin" && name!=="Forum Moderator"));
+	
+		let leave = userGroups.filter((name) => {
+			// `registered-users` is always a joined group
+			if (name === 'registered-users') {
+				return false;
+			}
+	
+			return !uGroups.includes(name);
+		});
+		
+		await executeJoinLeave(uid, join, leave);
 
-	await executeJoinLeave(uid, join, leave);
+		const newGroupTitle = JSON.stringify(uGroups);
+		const existingFields = await user.getUserFields(uid, ['groupTitle']);
+
+		if (newGroupTitle!==existingFields.groupTitle) {
+			await user.updateProfile(uid, {uid: uid, groupTitle: newGroupTitle});
+		}
+	} catch (error) {}
+
+	// if (!userData.groups || !Array.isArray(userData.groups)) {
+	// 	return;
+	// }
+
+	// // Retrieve user groups
+	// let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
+	// // Normalize user group data to just group names
+	// userGroups = userGroups.map(groupObj => groupObj.name);
+
+	// // Build join and leave arrays
+	// let join = userData.groups.filter(name => !userGroups.includes(name));
+	// if (plugin.settings.syncGroupList === 'on') {
+	// 	join = join.filter(group => plugin.settings.syncGroups.includes(group));
+	// }
+
+	// let leave = userGroups.filter((name) => {
+	// 	// `registered-users` is always a joined group
+	// 	if (name === 'registered-users') {
+	// 		return false;
+	// 	}
+
+	// 	return !userData.groups.includes(name);
+	// });
+	// if (plugin.settings.syncGroupList === 'on') {
+	// 	leave = leave.filter(group => plugin.settings.syncGroups.includes(group));
+	// }
+
+	// await executeJoinLeave(uid, join, leave);
 };
 
 async function executeJoinLeave(uid, join, leave) {

@@ -318,11 +318,7 @@ plugin.updateUserGroups = async (uid, userData) => {
 	if (userData.scs) {
 		const tscs = scs.split(",");
 		for (let i=0;i<tscs.length;i++) {
-			if (tscs[i]===-99) {
-				uGroups.push("Forum Admin");
-			} else if (tscs[i]===-95) {
-				uGroups.push("Forum Moderator");
-			} else if (tscs[i]===-20) {
+			if (tscs[i]===-20) {
 				uGroups.push("Tier II");
 			} else if (tscs[i]===-10) {
 				uGroups.push("Reliable");
@@ -371,11 +367,11 @@ plugin.updateUserGroups = async (uid, userData) => {
 		userGroups = userGroups.map(groupObj => groupObj.name);
 	
 		// Build join and leave arrays
-		let join = uGroups.filter(name => (!userGroups.includes(name) && name!=="Forum Admin" && name!=="Forum Moderator"));
+		let join = uGroups.filter(name => !userGroups.includes(name));
 	
 		let leave = userGroups.filter((name) => {
 			// `registered-users` is always a joined group
-			if (name === 'registered-users') {
+			if (['registered-users','Global Moderators','administrators'].includes(name)) {
 				return false;
 			}
 	
@@ -384,7 +380,7 @@ plugin.updateUserGroups = async (uid, userData) => {
 		
 		await executeJoinLeave(uid, join, leave);
 
-		const newGroupTitle = JSON.stringify((userGroups.includes("Forum Admin") || userGroups.includes("Forum Moderator")) ? userGroups.filter(item=>(item==="Forum Admin" || item==="Forum Moderator")) : uGroups);
+		const newGroupTitle = JSON.stringify(userGroups.includes('administrators') ? ["Forum Admin"] : userGroups.includes('Global Moderators') ? ["Forum Moderator"] : uGroups);
 		const existingFields = await user.getUserFields(uid, ['groupTitle']);
 
 		if (newGroupTitle!==existingFields.groupTitle) {

@@ -260,25 +260,24 @@ plugin.findOrCreateUser = async (userData) => {
 };
 
 plugin.updateUserProfile = async (uid, userData, isNewUser) => {
-	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
-	let userObj = {};
-
-	if (userData && userData.picture) {
-		const picture = validator.escape(userData.picture);
-
-		// const validBackgrounds = await user.getIconBackgrounds(uid);
-		// if (!validBackgrounds.includes(data.bgColor)) {
-		// 	data.bgColor = validBackgrounds[0];
-		// }
-
-
-		await user.updateProfile(uid, {
-			uid: uid,
-			picture: picture,
-			// 'icon:bgColor': data.bgColor,
-		}, ['picture', 'icon:bgColor']);
+	if (userData && (userData.picture || userData.fullname)) {
+		let tempUserObj = {uid: uid}
+		let tempUserFields = []
+		if (userData.picture) {
+			tempUserObj.picture = validator.escape(userData.picture);
+			tempUserFields.push('picture');
+		}
+		if (userData.fullname) {
+			tempUserObj.fullname = userData.fullname;
+		}
+		try {
+			await user.updateProfile(uid, tempUserObj, tempUserFields);
+		} catch (error) {}
 	}
 
+	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
+	let userObj = {};
+	
 	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
 	if (!isNewUser && plugin.settings.updateProfile !== 'on') {
 		return;
@@ -308,9 +307,9 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 		}
 	}
 
-	if (userData.picture) {
-		await db.setObjectField('user:' + uid, 'picture', userData.picture);
-	}
+	// if (userData.picture) {
+	// 	await db.setObjectField('user:' + uid, 'picture', userData.picture);
+	// }
 };
 
 plugin.updateUserGroups = async (uid, userData) => {

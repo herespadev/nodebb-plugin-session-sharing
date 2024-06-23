@@ -380,7 +380,7 @@ plugin.updateUserGroups = async (uid, userData) => {
 		
 		await executeJoinLeave(uid, join, leave);
 
-		const newGroupTitle = JSON.stringify(userGroups.includes('administrators') ? ["Forum Admin"] : userGroups.includes('Global Moderators') ? ["Forum Moderator"] : uGroups);
+		const newGroupTitle = JSON.stringify(userGroups.includes('administrators') ? ["administrators"] : userGroups.includes('Global Moderators') ? ["Global Moderators"] : uGroups);
 		const existingFields = await user.getUserFields(uid, ['groupTitle']);
 
 		if (newGroupTitle!==existingFields.groupTitle) {

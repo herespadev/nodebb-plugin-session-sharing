@@ -371,7 +371,7 @@ plugin.updateUserGroups = async (uid, userData) => {
 		userGroups = userGroups.map(groupObj => groupObj.name);
 	
 		// Build join and leave arrays
-		let join = uGroups.filter(name => (!userGroups.includes(name) && userGroups.includes('administrators') && userGroups.includes('Global Moderators')));
+		let join = uGroups.filter(name => (!userGroups.includes(name) && !userGroups.includes('administrators') && !userGroups.includes('Global Moderators')));
 	
 		let leave = userGroups.filter((name) => {
 			// `registered-users` is always a joined group

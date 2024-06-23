@@ -39,6 +39,7 @@ const payloadKeys = profileFields.concat([
 	'picture',
 	'groups',
 	'expires',
+	'scs',
 ]);
 
 console.log(process.env);
@@ -131,11 +132,14 @@ plugin.getUser = async (remoteId) => {
 
 plugin.process = async (token) => {
 	const payload = await jwt.verify(token, plugin.settings.secret);
-	const userData = await plugin.normalizePayload(payload);
+	let userData = await plugin.normalizePayload(payload);
 	const [uid, isNewUser] = await plugin.findOrCreateUser(userData);
 	await plugin.updateUserProfile(uid, userData, isNewUser);
 	await plugin.updateUserGroups(uid, userData);
 	await plugin.verifyUser(token, uid, isNewUser);
+	try {
+		delete userData.scs
+	} catch (error) {}
 	return [uid, userData, payload];
 };
 

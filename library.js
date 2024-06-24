@@ -318,51 +318,7 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 
 plugin.updateUserGroups = async (uid, userData) => {
 
-	let uGroups = []
-	if (userData.scs) {
-		const tscs = userData.scs.split(",");
-		for (let i=0;i<tscs.length;i++) {
-			if (tscs[i]==="-20") {
-				uGroups.push("Tier II");
-			} else if (tscs[i]==="-10") {
-				uGroups.push("Reliable");
-			} else if (tscs[i]==="10") {
-				uGroups.push("Nail Tech");
-			} else if (tscs[i]==="20") {
-				uGroups.push("Hair Stylist");
-			} else if (tscs[i]==="30") {
-				uGroups.push("Pet Groomer");
-			} else if (tscs[i]==="40") {
-				uGroups.push("Massage Therapist");
-			} else if (tscs[i]==="41") {
-				uGroups.push("Acupuncturist");
-			} else if (tscs[i]==="50") {
-				uGroups.push("Eyelash Technician");
-			} else if (tscs[i]==="60") {
-				uGroups.push("Esthetician");
-			} else if (tscs[i]==="61") {
-				uGroups.push("Dermal Filler Specialist");
-			} else if (tscs[i]==="62") {
-				uGroups.push("Botox Specialist");
-			} else if (tscs[i]==="65") {
-				uGroups.push("Body Sculpting Specialist");
-			} else if (tscs[i]==="70") {
-				uGroups.push("Makeup Artist");
-			} else if (tscs[i]==="80") {
-				uGroups.push("Hair Removal Specialist");
-			} else if (tscs[i]==="90") {
-				uGroups.push("Piercing Specialist");
-			} else if (tscs[i]==="100") {
-				uGroups.push("Yoga Instructor");
-			} else if (tscs[i]==="101") {
-				uGroups.push("Fitness Instructor");
-			} else if (tscs[i]==="110") {
-				uGroups.push("Home Cleaner");
-			} else if (tscs[i]==="210") {
-				uGroups.push("Automobile Detailer");
-			}
-		}
-	}
+	let uGroups = userData.scs ? userData.scs.split(',').filter(item => item.trim() !== '') : []
 	
 	try {
 		// Retrieve user groups

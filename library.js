@@ -145,30 +145,6 @@ plugin.process = async (token) => {
 	return [uid, userData, payload];
 };
 
-plugin.setUserPermissionsReadOnly = async (uid) => {
-    try {
-        // Fetch the user's current permissions
-        const userPermissions = await db.getObject(`user:${uid}:privileges`) || {};
-
-        // Update permissions to make the user read-only
-        const updatedPermissions = {
-            ...userPermissions,
-            'topics:reply': false,
-            'topics:create': false,
-            'posts:create': false,
-            'posts:edit': false,
-            'posts:delete': false,
-        };
-
-        // Save updated permissions back to the database
-        await db.setObject(`user:${uid}:privileges`, updatedPermissions);
-
-        winston.info(`[session-sharing] User ${uid} has been set to read-only mode due to vendorForumBanStatus.`);
-    } catch (error) {
-        winston.error(`[session-sharing] Failed to set user ${uid} to read-only mode: ${error.message}`);
-    }
-};
-
 plugin.normalizePayload = async (payload) => {
 	const userData = {};
 

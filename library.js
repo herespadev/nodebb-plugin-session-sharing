@@ -135,9 +135,6 @@ plugin.process = async (token) => {
 	const payload = await jwt.verify(token, plugin.settings.secret);
 	let userData = await plugin.normalizePayload(payload);
 	const [uid, isNewUser] = await plugin.findOrCreateUser(userData);
-	if (userData.vendorForumBanStatus === 1) {
-		await plugin.setUserPermissionsReadOnly(uid);
-	}
 	await plugin.updateUserProfile(uid, userData, isNewUser);
 	await plugin.updateUserGroups(uid, userData);
 	await plugin.verifyUser(token, uid, isNewUser);
@@ -346,7 +343,8 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 };
 
 plugin.updateUserGroups = async (uid, userData) => {
-
+	
+	const vendorForumBanStatus = userData.vendorForumBanStatus === 1;
 	let uGroups = userData.scs ? userData.scs.split(',').filter(item => item.trim() !== '') : []
 	
 	try {
@@ -354,7 +352,26 @@ plugin.updateUserGroups = async (uid, userData) => {
 		let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
 		// Normalize user group data to just group names
 		userGroups = userGroups.map(groupObj => groupObj.name);
-	
+
+		// Ensure the user is properly assigned based on vendorForumBanStatus
+		if (vendorForumBanStatus) {
+	            // If banned, ensure user is in `verified-users` and not in `registered-users`
+	            if (!userGroups.includes('verified-users')) {
+	                await groups.join('verified-users', uid);
+	            }
+	            if (userGroups.includes('registered-users')) {
+	                await groups.leave('registered-users', uid);
+	            }
+	        } else {
+	            // If not banned, ensure user is in `registered-users` and not in `verified-users`
+	            if (!userGroups.includes('registered-users')) {
+	                await groups.join('registered-users', uid);
+	            }
+	            if (userGroups.includes('verified-users')) {
+	                await groups.leave('verified-users', uid);
+	            }
+	        }
+		
 		// Build join and leave arrays
 		let join = uGroups.filter(name => (!userGroups.includes(name) && !userGroups.includes('administrators') && !userGroups.includes('Global Moderators')));
 	

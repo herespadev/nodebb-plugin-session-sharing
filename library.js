@@ -40,6 +40,7 @@ const payloadKeys = profileFields.concat([
 	'groups',
 	'expires',
 	'scs',
+	'vendorForumBanStatus',
 ]);
 
 console.log(process.env);
@@ -134,13 +135,41 @@ plugin.process = async (token) => {
 	const payload = await jwt.verify(token, plugin.settings.secret);
 	let userData = await plugin.normalizePayload(payload);
 	const [uid, isNewUser] = await plugin.findOrCreateUser(userData);
+	if (userData.vendorForumBanStatus === 1) {
+		await plugin.setUserPermissionsReadOnly(uid);
+	}
 	await plugin.updateUserProfile(uid, userData, isNewUser);
 	await plugin.updateUserGroups(uid, userData);
 	await plugin.verifyUser(token, uid, isNewUser);
 	try {
-		delete userData.scs
+		delete userData.scs;
+		delete userData.vendorForumBanStatus;
 	} catch (error) {}
 	return [uid, userData, payload];
+};
+
+plugin.setUserPermissionsReadOnly = async (uid) => {
+    try {
+        // Fetch the user's current permissions
+        const userPermissions = await db.getObject(`user:${uid}:privileges`) || {};
+
+        // Update permissions to make the user read-only
+        const updatedPermissions = {
+            ...userPermissions,
+            'topics:reply': false,
+            'topics:create': false,
+            'posts:create': false,
+            'posts:edit': false,
+            'posts:delete': false,
+        };
+
+        // Save updated permissions back to the database
+        await db.setObject(`user:${uid}:privileges`, updatedPermissions);
+
+        winston.info(`[session-sharing] User ${uid} has been set to read-only mode due to vendorForumBanStatus.`);
+    } catch (error) {
+        winston.error(`[session-sharing] Failed to set user ${uid} to read-only mode: ${error.message}`);
+    }
 };
 
 plugin.normalizePayload = async (payload) => {
